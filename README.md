@@ -1,4 +1,3 @@
-*** WORK-IN-PROGRESS ***
 # Score streaming data with a machine learning model
 
 In this code pattern, we will be streaming online shopping data and using the data to track the products that each customer has added to their cart. We will build a k-means clustering model with scikit-learn to group customers according to the contents of their shopping carts. The cluster assignment can be used to predict additional products to recommend.
@@ -32,17 +31,13 @@ Using the Streams Flows editor, we will create a streaming application with the 
 1. [Verify access to your IBM Streams instance on Cloud Pak for Data](#1-Verify-access-to-your-IBM-Streams-instance-on-Cloud-Pak-for-Data)
 1. [Create a new project in Cloud Pak for Data](#2-create-a-new-project-in-cloud-pak-for-data)
 1. [Build and store a model](#2-build-and-store-a-model)
-
-1. [Create a Streams Flow in Cloud Pak for Data](#6-create-a-streams-flow-in-cloud-pak-for-data)
-1. [Create a Streams Flow with Kafka as source](#7-create-a-streams-flow-with-kafka-as-source)
-1. [Use Streams Flows option to generate a notebook](#8-use-streams-flows-option-to-generate-a-notebook)
-1. [Run the generated Streams Flow notebook](#9-run-the-generated-streams-flow-notebook)
+1. [Create and run a Streams Flow application](#4-create-and-run-a-streams-flow-application)
 
 ### 1. Verify access to your IBM Streams instance on Cloud Pak for Data
 
 Once you login to your `Cloud Pak for Data` instance, ensure that your administrator has provisioned an instance of `IBM Streams`, and has given your user has access to the instance.
 
-To see the available services, click on the `Services` icon. Search for `Streams`. You should see an `Enabled` indicator for Streams. `Watson Studio` and `Watson Machine Learning` also need to be enabled to build and deploy the model.
+To see the available services, click on the `Services` icon. Search for `Streams`. You should see an `Enabled` indicator for `Streams`. `Watson Studio` and `Watson Machine Learning` also need to be enabled to build and deploy the model.
 
 ![catalog_streams.png](doc/source/images/catalog_streams.png)
 
@@ -60,9 +55,7 @@ Click on `New project +`. Then select `Create an empty project` and enter a uniq
 
 ### 2. Build and store a model
 
-We will build a model using a Jupyter notebook and scikit-learn. We're using a k-means classifier to group customers based on the contents of their shopping carts. Later, we will use that model to predict which group a customer is most likely to go in so that we can anticipate additional products to recommend.
-
-Once we have built and stored the model, it will be available for deployment so that it can be used in our streaming application.
+We will build a model using a Jupyter notebook and scikit-learn. We're using a k-means classifier to group customers based on the contents of their shopping carts. Once we have built and stored the model, it will be available for deployment so that it can be used in our streaming application.
 
 #### Import the notebook into your project
 
@@ -79,13 +72,15 @@ Fill in the following information:
   ```url
   https://raw.githubusercontent.com/IBM/ibm-streams-with-ml-model/master/notebooks/shopping_cart_kmeans_cluster_model.ipynb
   ```
-  ![new-notebook](doc/source/images/new-notebook.png)
+* Click the `Create notebook` button.
 
-Click the `Create notebook` button.
+![new-notebook](doc/source/images/new-notebook.png)
 
 #### Edit the notebook
 
-When you import the notebook you will be put in edit mode. Before running the notebook, you need to configure one thing. Edit the `WML Credentials` cell to set the `url` to the URL you use to access Cloud Pak for Data.
+When you import the notebook you will be put in edit mode. Before running the notebook, you need to configure one thing:
+
+* Edit the `WML Credentials` cell to set the `url` to the URL you use to access Cloud Pak for Data.
 
 ![wml_creds.png](doc/source/images/wml_creds.png)
 
@@ -95,24 +90,24 @@ Select `Cell > Run All` to run the notebook. If you prefer, you can use the `Run
 
 ### 2. Associate the deployment space with the project
 
-The notebook created a deployment space named "Shopping Cart k-means Model" and stored the model there.
+The notebook created a deployment space named `ibm_streams_with_ml_model_deployment_space` and stored the model there.
 
 Inside your new project, select the `Settings` tab and click on `Associate a deployment space +`.
 
 ![deployment_space.png](doc/source/images/deployment_space.png)
 
 * Use `Existing` tab
-* Select the `streams_ml_deployment_space` which was just created
+* Select the `ibm_streams_with_ml_model_deployment_space` which was just created
 * Click `Associate`
 
 ### 3. Deploy the model
 
-* In your project, click on the newly associated deployment space named `streams_ml_deployment_space`.
-* Select the `Assets` tab and click on the model named `Shopping Cart k-means Model`.
+* In your project, click on the newly associated deployment space named `ibm_streams_with_ml_model_deployment_space`.
+* Select the `Assets` tab and click on the model named `Shopping Cart Cluster Model`.
 * Click on the `Create deployment` button.
 * Select `Online`, provide a deployment name, and click `Create`.
 
-### 6. Create a Streams Flow
+### 4. Create and run a Streams Flow application
 
 From the project panel, click the `Add to project +` button. Choose the `Streams flow` tile from the list of options.
 
@@ -136,6 +131,8 @@ From the `Sources` list, select and drag the `Sample Data` operator onto the can
 
 ![add-sample-data-source](doc/source/images/add-sample-data-source.png)
 
+> NOTE: As you've probably already noticed, red error indicators tell you when required settings are missing. For example, some settings are required. You will also see that some operators require a source and/or target connection. When an operator has a red spot on it, you can hover over it to see what the errors are.
+
 Click on the canvas object to see its associated properties. From the list of available data types in the `Topic` drop-down list, select `Clickstream`.
 
 ![set-sample-data-topic](doc/source/images/set-sample-data-topic.png)
@@ -150,12 +147,6 @@ From the `Processing and Analytics` list, select and drag the `Filter` operator 
 
 ![add-filter-target](doc/source/images/add-filter-target.png)
 
-#### Notice error indicators
-
-As you've probably already noticed, red error indicators tell you when required settings are missing. For example, we've seen settings that were required. You will also see that some operators require a source and/or target connection.
-
-When an operator has a red spot on it, you can hover over it to see what the erros are.
-
 #### Add a Code operator
 
 * From the `Processing and Analytics` list, select and drag the `Code` operator onto the canvas
@@ -163,7 +154,6 @@ When an operator has a red spot on it, you can hover over it to see what the err
 * Click on the Code operator to see its associated properties. Select `Python 3.6` as the `Coding Language`.
 * In the `Code` property, paste in the following code:
    ```python
-   YOU MUST EDIT THE SCHEMA and add all attributes that you are returning as output.
    #
    # Preinstalled Python packages can be viewed from the Settings pane.
    # In the Settings pane you can also install additional Python packages.
@@ -181,7 +171,7 @@ When an operator has a red spot on it, you can hover over it to see what the err
    def init(state):
        # do something once on flow initialization and save in the state object
        state['keep_columns'] = ['Baby Food','Diapers','Formula','Lotion','Baby wash','Wipes','Fresh Fruits','Fresh Vegetables','Beer','Wine','Club Soda','Sports Drink','Chips','Popcorn','Oatmeal','Medicines','Canned Foods','Cigarettes','Cheese','Cleaning Products','Condiments','Frozen Foods','Kitchen Items','Meat','Office Supplies','Personal Care','Pet Supplies','Sea Food','Spices']
-       state['empty_cart'] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+       state['empty_cart'] = [0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
        state['customer_carts'] = {}
        pass
 
@@ -215,7 +205,7 @@ When an operator has a red spot on it, you can hover over it to see what the err
 
 The output now contains just the customer_id an array indicating which products are in the cart. This is the format we needed to pass to our model.
 
-> Notice: We used the Code operator specifically to arrange our shopping cart data for scoring, but if you take another look at the Code operator you'll see that it is a very powerful operator where you can put in the Python code to do whatever manipulation you need in your streaming application.
+> NOTE: We used the Code operator specifically to arrange our shopping cart data for scoring, but if you take another look at the Code operator you'll see that it is a very powerful operator where you can put in the Python code to do whatever manipulation you need in your streaming application.
 
 #### Add a WML Deployment
 
