@@ -6,14 +6,6 @@ Our application will be built using IBM Streams on IBM Cloud Pak for Data. IBM S
 
 To build and deploy our machine learning model, we will use a Jupyter notebook in Watson Studio and a Watson Machine Learning instance. In our examples, both are running on IBM Cloud Pak for Data.
 
-Using the Streams Flows editor, we will create a streaming application with the following operators:
-
-* A `Source` operator that generates sample clickstream data
-* A `Filter` operator that keeps only the "add to cart" events
-* A `Code` operator where we use Python code to arrange the shopping cart items into an input array for scoring
-* A `WML Deployment` operator to assign the customer to a cluster
-* A `Debug` operator to demonstrate the results
-
 ## Flow
 
 ![architecure](doc/source/images/architecture.png)
@@ -111,6 +103,14 @@ Inside your new project, select the `Settings` tab and click on `Associate a dep
 
 ### 6. Create and run a Streams Flow application
 
+Using the Streams Flows editor, we will create a streaming application with the following operators:
+
+* A `Source` operator that generates sample clickstream data
+* A `Filter` operator that keeps only the "add to cart" events
+* A `Code` operator where we use Python code to arrange the shopping cart items into an input array for scoring
+* A `WML Deployment` operator to assign the customer to a cluster
+* A `Debug` operator to demonstrate the results
+
 From the project panel, click the `Add to project +` button. Choose the `Streams flow` tile from the list of options.
 
 ![add-streams-flow-type](doc/source/images/add-streams-flow-type.png)
@@ -153,21 +153,24 @@ From the `Processing and Analytics` list, select and drag the `Filter` operator 
 
 * From the `Processing and Analytics` list, select and drag the `Code` operator onto the canvas
 * Connect the `Filter` operator's target to this `Code` operator's source (using drag-and-drop like we did earlier)
-* Click on the Code operator to see its associated properties. Select `Python 3.6` as the `Coding Language`.
+* Click on the `Code` operator to see its associated properties. Depending on your version, you might see one or both of the following options:
+  * If you have a `Coding Language` pulldown, select a `Python 3.x` version.
+  * If you have a `Code Style` pulldown, select `Function`.
 * In the `Code` property, paste in the following code:
+
    ```python
    #
    # Preinstalled Python packages can be viewed from the Settings pane.
    # In the Settings pane you can also install additional Python packages.
-   
+
    import sys
    import logging
-   
+
    # Use this logger for tracing or debugging your code:
    logger = logging.getLogger(__name__)
    # Example:
    #     logger.info('Got to step 2...')
-   
+
    # init() function will be called once on flow initialization
    # @state a Python dictionary object for keeping state. The state object is passed to the process function
    def init(state):
@@ -198,6 +201,7 @@ From the `Processing and Analytics` list, select and drag the `Filter` operator 
        state['customer_carts'][event['customer_id']] = cart
        return { 'customer_id': customer_id, 'cart_list': cart }
    ```
+
 * Edit the `Output Schema` and set it as follows and click `Apply`:
   | Attribute Name | Type |
   | ---            | ---  |
