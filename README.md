@@ -86,7 +86,7 @@ Select `Cell > Run All` to run the notebook. If you prefer, you can use the `Run
 
 The notebook created a deployment space named `ibm_streams_with_ml_model_deployment_space` and stored the model there.
 
-Inside your new project, select the `Settings` tab and click on `Associate a deployment space +`.
+* Inside your new project, select the `Settings` tab and click on `Associate a deployment space +`.
 
 ![deployment_space.png](doc/source/images/deployment_space.png)
 
@@ -129,7 +129,7 @@ In the main icon bar at the top, you will see the options to `run` and `save` th
 
 #### Add sample clickstream data as data source
 
-From the `Sources` list, select and drag the `Sample Data` operator onto the canvas.
+* From the `Sources` list, select and drag the `Sample Data` operator onto the canvas.
 
 ![add-sample-data-source](doc/source/images/add-sample-data-source.png)
 
@@ -158,48 +158,47 @@ From the `Processing and Analytics` list, select and drag the `Filter` operator 
   * If you have a `Code Style` pulldown, select `Function`.
 * In the `Code` property, paste in the following code:
 
-   ```python
-   #
-   # Preinstalled Python packages can be viewed from the Settings pane.
-   # In the Settings pane you can also install additional Python packages.
+  ```python
+  # Preinstalled Python packages can be viewed from the Settings pane.
+  # In the Settings pane you can also install additional Python packages.
 
-   import sys
-   import logging
+  import sys
+  import logging
 
-   # Use this logger for tracing or debugging your code:
-   logger = logging.getLogger(__name__)
-   # Example:
-   #     logger.info('Got to step 2...')
+  # Use this logger for tracing or debugging your code:
+  logger = logging.getLogger(__name__)
+  # Example:
+  #     logger.info('Got to step 2...')
 
-   # init() function will be called once on flow initialization
-   # @state a Python dictionary object for keeping state. The state object is passed to the process function
-   def init(state):
-       # do something once on flow initialization and save in the state object
-       state['keep_columns'] = ['Baby Food','Diapers','Formula','Lotion','Baby wash','Wipes','Fresh Fruits','Fresh Vegetables','Beer','Wine','Club Soda','Sports Drink','Chips','Popcorn','Oatmeal','Medicines','Canned Foods','Cigarettes','Cheese','Cleaning Products','Condiments','Frozen Foods','Kitchen Items','Meat','Office Supplies','Personal Care','Pet Supplies','Sea Food','Spices']
-       state['empty_cart'] = [0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
-       state['customer_carts'] = {}
-       pass
+  # init() function will be called once on flow initialization
+  # @state a Python dictionary object for keeping state. The state object is passed to the process function
+  def init(state):
+      # do something once on flow initialization and save in the state object
+      state['keep_columns'] = ['Baby Food','Diapers','Formula','Lotion','Baby wash','Wipes','Fresh Fruits','Fresh Vegetables','Beer','Wine','Club Soda','Sports Drink','Chips','Popcorn','Oatmeal','Medicines','Canned Foods','Cigarettes','Cheese','Cleaning Products','Condiments','Frozen Foods','Kitchen Items','Meat','Office Supplies','Personal Care','Pet Supplies','Sea Food','Spices']
+      state['num_columns'] = len(state['keep_columns'])
+      state['customer_carts'] = {}
+      pass
 
-   # process() function will be invoked on every event tuple
-   # @event a Python dictionary object representing the input event tuple as defined by the input schema
-   # @state a Python dictionary object for keeping state over subsequent function calls
-   # return must be a Python dictionary object. It will be the output of this operator.
-   #        Returning None results in not submitting an output tuple for this invocation.
-   # You must declare all output attributes in the Edit Schema window.
-   def process(event, state):
-       # Enrich the event, such as by:
-       # event['wordCount'] = len(event['phrase'].split())
-       logger.info(event)
-       customer_id = event['customer_id']
-       product_index = state['keep_columns'].index(event['product_name'])
-       try:
-         cart = state['customer_carts'][event['customer_id']]
-       except KeyError:
-         cart = state['empty_cart']
-       if product_index > -1:
-         cart[product_index] = 1
-       state['customer_carts'][event['customer_id']] = cart
-       return { 'customer_id': customer_id, 'cart_list': cart }
+  # process() function will be invoked on every event tuple
+  # @event a Python dictionary object representing the input event tuple as defined by the input schema
+  # @state a Python dictionary object for keeping state over subsequent function calls
+  # return must be a Python dictionary object. It will be the output of this operator.
+  #        Returning None results in not submitting an output tuple for this invocation.
+  # You must declare all output attributes in the Edit Schema window.
+  def process(event, state):
+      # Enrich the event, such as by:
+      # event['wordCount'] = len(event['phrase'].split())
+      # logger.info(event)
+
+      customer_id = event['customer_id']
+      cart = state['customer_carts'].get(customer_id, [0] * state['num_columns'])  # Find cart or start empty
+      product_index = state['keep_columns'].index(event['product_name'])
+      if product_index > -1:  # If product name recognized
+        cart[product_index] = 1  # Mark product in cart
+      state['customer_carts'][customer_id] = cart  # Save cart
+
+      # Return customer_id and list indicating which products are in cart
+      return { 'customer_id': customer_id, 'cart_list': cart }
    ```
 
 * Edit the `Output Schema` and set it as follows and click `Apply`:
@@ -219,29 +218,33 @@ The output now contains just the customer_id and an array indicating which produ
 * Click on the deployment operator to edit the settings.
 * Under `DEPLOYMENT INPUT PARAMETERS`, set `input_cart (array)` to `cart_list`.  This maps our Code output array to the expected input parameter for prediction.
 * Edit the `Output schema`.
-* Click `Add attributes from incoming schema`.
 * Click `Add attribute +`.
   * Set `Attribute Name` to `prediction`.
   * Set `Type` to `Number`.
   * Set `Model Field` to `prediction`.
+* Click `Add attributes from incoming schema`.
 
 #### Add Debug operator as target
 
 For simplicity, we will assign a `Debug` operator as the target of our WML Deployment.
 
-From the `Targets` list, select and drag the `Debug` operator onto the canvas, and then connect the two object together.
-
-#### Run the streams flow
-
-Click the `run` button to start the flow.
+* From the `Targets` list, select and drag the `Debug` operator onto the canvas, and then connect the two object together.
 
 #### Save and run
 
-Click the `Save and run` icon to start your flow. This will result in a new panel being displayed that shows real-time metrics. What is displayed is a live data stream. If you click on the stream between any two operator nodes, you can see the actual data - in a table view or in JSON format.
+* Click the `Save and run` icon to start your flow.
 
-![streams-flow-show-data](doc/source/images/streams-flow-show-data.png)
+This will result in a new panel being displayed that shows real-time metrics. What is displayed is a live data stream. If you click on the stream between any two operator nodes, you can see the actual data - in a table view or in JSON format.
 
-Use the `Stop` icon to stop the flow, and the `Pencil` icon to return to the flow editor.
+![results.png](doc/source/images/results.png)
+
+If you watch the output stream from the `Code` operator, you'll see that we used some Python code to build an array indicating which products are in each customer's cart. This is the format we needed for the next operator.
+
+If you watch the output stream from the Watson Machine Learning Deployment operator, you'll see that we used the k-means model (that we built and deployed) to add a `prediction` column to the data. This prediction indicates that this customer's cart is similar to other carts in this group. We could use this prediction to recommend products based on what other customers in this group frequently bought.
+
+For now, the `Debug` operator is where we'll stop. We wanted to demonstrate enriching data-in-motion with a machine learning model. Using a sample data source and debug output allowed us to do that. Of course, a production application would use a real live data stream as input and would make the product recommendation available to customers in real-time. Source and target operators such as Kafka, MQTT, databases and also IBM Streams are typically used for this.
+
+* Use the `Stop` icon to stop the flow
 
 ## License
 
